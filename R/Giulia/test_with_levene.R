@@ -2,16 +2,13 @@
 #' @description
 #' \code{\link{test_with_levene}} Function for comparing statistical comparison between numeric variables, testing for assumptions on varaibles' distribution and categorical variables
 #'
-#'
-#'
 #' @param data data.frame object with the variables (numeric or categorical) on which performing the statistical comparisons
-#' @param group_var grouping variable with two groups (classes)
+#' @param group_var grouping variable with two groups (classes) in quotes
 #' 
 #' @name test_with_levene
 #'
 #' @return
 #'  \item{final_table}{a data.frame object with results unlisted (with bindrow function}
-#'  
 #'  
 #'  
 #' @examples
