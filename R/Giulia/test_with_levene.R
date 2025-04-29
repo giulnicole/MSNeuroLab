@@ -30,8 +30,7 @@
 #'
 #'  
 #'  
-#'  
-
+#'  @export
 test_with_levene <- function(data, group_var) {
   
   suppressWarnings({
