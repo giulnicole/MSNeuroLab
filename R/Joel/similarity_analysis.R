@@ -17,7 +17,7 @@
 #' @name similarity_analysis
 #'
 #' @return
-#'  \item{final_table}{}
+#'  \item{result}{List of a }
 #'  
 #' @examples
 #' \dontrun{
