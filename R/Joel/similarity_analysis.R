@@ -1,6 +1,6 @@
-#' @title test_with_levene
+#' @title similarity_analysis
 #' @description
-#' \code{\link{test_with_levene}} This function performs similarity matching between patients and controls based on multiple variables. It identifies the most similar control subject for each patient using distance-based similarity metrics. 
+#' \code{\link{similarity_analysis}} This function performs similarity matching between patients and controls based on multiple variables. It identifies the most similar control subject for each patient using distance-based similarity metrics. 
 #'
 #' @param data data.frame that contains numeric or categorical variables arranged in columns.
 #' @param input_columns List of columns that are used in computing distance metrics.
@@ -17,18 +17,17 @@
 #' @name similarity_analysis
 #'
 #' @return
-#'  \item{result}{List of a }
+#'  \item{result}{List of a table with numeric normalized comparison_variable values, distance metrics and similarities for pairs of most similar patients and controls, and a scatterplot visualizing the comparisons}
 #'  
 #' @examples
 #' \dontrun{
 #' # Using the function
 #' test_results <- similarity_analysis() # By default generates an example plot from R test data set mtcars
 #' print(test_results$results) # Table of normalized comparison_variable values, distance metrics and similarities for pairs of most similar patients and controls 
-#' print(test_results$plot) # Scatterplot showing correlation in comparison_variable between patients and controls with one dot for each patient-control comparison. 
+#' print(test_results$plot) # Scatterplot showing correlation in comparison_variable between the most similar patients and controls with one dot for each patient-control comparison. 
 #' # One dot will match each patient. Each control is matched by none to several dots. Dot size indicates level of similarity calculated from input columns. 
 #' # The farther away from the dotted line the dot lands, the bigger the discrepancy in comparison_variable between the patient and the control.
 #'  }                             
-#'
 #'
 #'  @export
 similarity_analysis <- function(
