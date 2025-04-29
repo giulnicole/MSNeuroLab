@@ -182,9 +182,6 @@ similarity_analysis <- function(
     ggplot2::theme_minimal()
   
   # Return both results and plot
-  return(list(results = results, plot = p))
+  result <- list(results = results, plot = p)
+  return(result)
 }
-
-result <- similarity_analysis()
-print(result$plot)
-print(result$results)
