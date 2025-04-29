@@ -17,13 +17,13 @@
 #' @name similarity_analysis
 #'
 #' @return
-#'  \item{result}{List of a table with numeric normalized comparison_variable values, distance metrics and similarities for pairs of most similar patients and controls, and a scatterplot visualizing the comparisons}
+#'  \item{result}{List of a table with numeric comparison_variable values, distance metrics and similarities for pairs of most similar patients and controls, and a scatterplot visualizing the comparisons}
 #'  
 #' @examples
 #' \dontrun{
 #' # Using the function
 #' test_results <- similarity_analysis() # By default generates an example plot from R test data set mtcars
-#' print(test_results$results) # Table of normalized comparison_variable values, distance metrics and similarities for pairs of most similar patients and controls 
+#' print(test_results$results) # Table of comparison_variable values, distance metrics and similarities for pairs of most similar patients and controls 
 #' print(test_results$plot) # Scatterplot showing correlation in comparison_variable between the most similar patients and controls with one dot for each patient-control comparison. 
 #' # One dot will match each patient. Each control is matched by none to several dots. Dot size indicates level of similarity calculated from input columns. 
 #' # The farther away from the dotted line the dot lands, the bigger the discrepancy in comparison_variable between the patient and the control.
@@ -32,11 +32,11 @@
 #'  @export
 similarity_analysis <- function(
     data = mtcars,             # Input data frame 
-    input_columns = c("mpg","cyl","disp","hp"), # Vector of columns to use for determining similarity
-    group_column = "vs",  # Column that defines patient vs control groups
+    input_columns = c("mpg","cyl","hp"), # Vector of columns to use for determining similarity
+    group_column = "am",  # Column that defines patient vs control groups
     patient_value = 1,      # Value in group_column that identifies patients
     control_value = 0,      # Value in group_column that identifies controls
-    comparison_variable = "mpg",           # Variable to compare (can be any numeric column)
+    comparison_variable = "disp",           # Variable to compare (can be any numeric column)
     distance_metric = "euclidean", # "euclidean", "cosine", or "manhattan"
     x_label = NULL,             # Variable to plot on x-axis (column in results), NULL for automatic
     y_label = NULL,             # Variable to plot on y-axis (column in results), NULL for automatic
@@ -184,3 +184,6 @@ similarity_analysis <- function(
   result <- list(results = results, plot = p)
   return(result)
 }
+
+test <- similarity_analysis()
+print(test$plot)
