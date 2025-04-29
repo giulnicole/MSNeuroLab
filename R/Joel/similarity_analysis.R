@@ -166,7 +166,7 @@ similarity_analysis <- function(
       cols_str <- paste0(substr(cols_str, 1, 37), "...")
     }
     var_name <- gsub("_", " ", comparison_variable)
-    plot_title <- paste0("Individual Brain Similarity by ", var_name, "\n",
+    plot_title <- paste0("Individual Similarity by ", var_name, "\n",
                          "Using: ", cols_str)
   }
   
