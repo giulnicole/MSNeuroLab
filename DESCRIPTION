@@ -1,9 +1,9 @@
 Package: MSNeuroLab
-Title: What the Package Does (One Line, Title Case)
+Title: Statistical analyses procedures from our lab
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Authors@R: Authors@R: c(person("Giulia Nicole", "Baldrighi", email = "giulia.baldrighi01@utu.fi", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-8538-4768")),
+            person("Joel", "Tuomaala", email = "joel.tuomaala@utu.fi", role= c("aut"), comment = c(ORCID = )))
+Description: Repository of functions to study MS data
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
