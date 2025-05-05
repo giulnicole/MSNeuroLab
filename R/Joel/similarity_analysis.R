@@ -180,6 +180,9 @@ similarity_analysis <- function(
                   size = paste0("Similarity \n(", distance_metric, ")")) +
     ggplot2::theme_minimal()
   
+  # Additional metrics that can be derived from results 
+  results$Gap_comparison <- results[,2]-results[,1] # difference in comparison_variable
+
   # Return both results and plot
   result <- list(results = results, plot = p)
   return(result)
