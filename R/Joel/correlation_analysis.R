@@ -135,7 +135,7 @@ correlation_analysis <- function(
       }
     }, error = function(e) {
       warning(paste("Error calculating correlation for group", group_loop, ":", e$message))
-    })
+    }) # end of trycatch
   }
   
   # Add significance indicators
