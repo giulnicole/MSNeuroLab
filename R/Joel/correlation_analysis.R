@@ -139,7 +139,7 @@ correlation_analysis <- function(
   }
   
   # Add significance indicators
-  correlation_results$Significance <- ""
+  correlation_results$Significance <- NA
   correlation_results$Significance[correlation_results$P_value >= 0.05] <- "ns"
   correlation_results$Significance[correlation_results$P_value < 0.05] <- "*"
   correlation_results$Significance[correlation_results$P_value < 0.01] <- "**"
