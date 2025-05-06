@@ -1,8 +1,7 @@
 #' @title generate_demographic_tables
 #' @description
 #' \code{\link{generate_demographic_tables}} This function creates demographic summary 
-#' tables with group comparisons for research studies. It calculates descriptive 
-#' statistics and performs statistical tests between groups.
+#' tables and calculates statistical tests between groups.
 #'
 #' @param input_data data.frame containing the variables to be analyzed.
 #' @param parameter_list Vector of column names to include in the analysis.
@@ -17,7 +16,7 @@
 #' @param completed_table_sex_statistic Which sex statistic to show in the final table.
 #'        Options: "n_m_f", "n_fn_ratio", "n_f_fn_ratio", "f_n_ratio", "n_f", "n_m", "n".
 #' @param multiple_comparison_correction Method for correcting p-values. 
-#'        Options: "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none".
+#'        Options: "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", NULL.
 #' @param comparison_list Optional list of specific group comparisons to make.
 #' 
 #' @name generate_demographic_tables
@@ -30,11 +29,9 @@
 #' @examples
 #' \dontrun{
 #' # Using the function
-#' results <- generate_demographic_tables(
-#'   input_data = my_data,
-#'   parameter_list = c("age", "height", "weight"),
-#'   group_column = "treatment_group"
-#' )
+#' results <- generate_demographic_tables()
+#' print(results$demographic_statistics)
+#' print(results$sex_ratios)
 #' print(results$complete_table)
 #' }                             
 #'
@@ -44,14 +41,14 @@ generate_demographic_tables <- function(
     parameter_list = c("mpg", "disp", "qsec"),     # Columns to analyze
     group_column = "am",                           # Grouping variable
     sex_column = "vs",                            # Sex variable (optional)
-    female_value = 0,                             # Female identifier
-    male_value = 1,                               # Male identifier
+    female_value = 0,                             # Female identifier (optional, but required for sex_column)
+    male_value = 1,                               # Male identifier (optional, but required for sex_column)
     format_value = 2,                              # Decimal places for percentages
     round_value = 2,                               # Decimal places for rounding
     completed_table_statistic = "median_Q1_Q3",     # Statistic for final table
     completed_table_sex_statistic = "n_m_f",       # Sex statistic for final table
-    multiple_comparison_correction = "BH",          # P-value correction method
-    comparison_list = NULL                         # Specific comparisons (optional)
+    multiple_comparison_correction = "BH",          # P-value correction method (NULL to skip)
+    comparison_list = NULL                         # Specific comparisons (optional, will limit group wise comparisons to the ones in this list)
 ) {
   
   # Dependencies
@@ -240,14 +237,14 @@ generate_demographic_tables <- function(
   if(!is.null(multiple_comparison_correction)) {
     p_value_columns <- grep(" vs ", names(table_final))
     for (loop_row in 1:nrow(table_final)) {
-      table_final[loop_row, p_value_columns] <- p.adjust(
+      table_final[loop_row, p_value_columns] <- format(p.adjust(
         p = as.numeric(table_final[loop_row, p_value_columns]), 
         method = multiple_comparison_correction
-      )
+      ), nsmall = 3)
     }
   }
   
-  # Add sample sizes as first row
+  # Add group sizes as first row
   temp_row <- table_final[1, ]
   temp_row[] <- NA
   temp_row$parameter <- "n"
