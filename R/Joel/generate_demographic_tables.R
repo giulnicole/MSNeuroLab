@@ -12,9 +12,25 @@
 #' @param format_value Number of decimal places for percentage formatting.
 #' @param round_value Number of decimal places for rounding statistics.
 #' @param completed_table_statistic Which statistic to show in the final table. 
-#'        Options: "mean_sd", "median_Q1_Q3", "min_max", "mean", "sd", "median", "Q1", "Q3", "min", "max".
+#'        Options: 
+#'        "mean_sd", 
+#'        "median_Q1_Q3", 
+#'        "min_max", 
+#'        "mean", 
+#'        "sd", 
+#'        "median", 
+#'        "Q1", 
+#'        "Q3", 
+#'        "min", 
+#'        "max".
 #' @param completed_table_sex_statistic Which sex statistic to show in the final table.
-#'        Options: "n_m_f", "n_fn_ratio", "n_f_fn_ratio", "f_n_ratio", "n_f", "n_m", "n".
+#'        Options: 
+#'        "n_m_f" n males and n females
+#'        "n_fn_ratio" n with female n to n ratio, 
+#'        "n_f_fn_ratio", n female with n female to n ratio,
+#'        "f_n_ratio", n female to n ratio
+#'        "n_f", n females
+#'        "n_m" n males
 #' @param multiple_comparison_correction Method for correcting p-values. 
 #'        Options: "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", NULL.
 #' @param comparison_list Optional list of specific group comparisons to make.
@@ -38,11 +54,11 @@
 #' @export
 generate_demographic_tables <- function(
     input_data = mtcars,                           # Input data frame
-    parameter_list = c("mpg", "disp", "qsec"),     # Columns to analyze
+    parameter_list = c("mpg", "disp", "qsec"),     # Columns to analyze. Rows in output will appear in this order, though n and sex rarios will be the top rows.
     group_column = "am",                           # Grouping variable
     sex_column = "vs",                            # Sex variable (optional)
-    female_value = 0,                             # Female identifier (optional, but required for sex_column)
-    male_value = 1,                               # Male identifier (optional, but required for sex_column)
+    female_value = 0,                             # Female identifier (optional, but required with sex_column)
+    male_value = 1,                               # Male identifier (optional, but required with sex_column)
     format_value = 2,                              # Decimal places for percentages
     round_value = 2,                               # Decimal places for rounding
     completed_table_statistic = "median_Q1_Q3",     # Statistic for final table
@@ -106,7 +122,7 @@ generate_demographic_tables <- function(
         stringsAsFactors = FALSE
       )
       
-      # Format combined statistics
+      # Format combined statistics for publishing
       temp$mean_sd <- paste0(format(temp$mean, nsmall = round_value), 
                              " (", format(temp$sd, nsmall = round_value), ")")
       temp$median_Q1_Q3 <- paste0(format(temp$median, nsmall = round_value), 
@@ -149,8 +165,9 @@ generate_demographic_tables <- function(
       
       # Calculate ratios and combined statistics
       temp$n_m_f <- paste0(temp$n_m, "/", temp$n_f)
-      temp$f_n_ratio <- format(round(temp$n_f/temp$n * 100, round_value), 
-                               nsmall = format_value)
+      temp$f_n_ratio <- format(round(temp$n_f/temp$n * 100, 0), 
+                               nsmall = 0)
+      temp$f_n_ratio <- paste0(temp$f_n_ratio," %")
       temp$n_fn_ratio <- paste0(temp$n, " (", temp$f_n_ratio, ")")
       temp$n_f_fn_ratio <- paste0(temp$n_f, " (", temp$f_n_ratio, ")")
       
@@ -225,6 +242,12 @@ generate_demographic_tables <- function(
   # Merge with statistical test results
   table_final <- merge(wide_table, wilcox_results, by = "parameter", all.x = TRUE)
   
+  # Reorder rows to match the order of parameter_list
+  table_final$parameter <- factor(table_final$parameter, levels = parameter_list)
+  table_final <- table_final[order(table_final$parameter), ]
+  table_final$parameter <- as.character(table_final$parameter)  # Convert back to character for consistent handling
+  
+  
   # Add sex ratios if sex column is defined
   if (!is.null(sex_column)) {
     table_final <- rbind(
@@ -268,3 +291,6 @@ generate_demographic_tables <- function(
   
   return(result)
 }
+
+
+
