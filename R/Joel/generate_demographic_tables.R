@@ -9,8 +9,8 @@
 #' @param sex_column Character string specifying the sex variable (optional).
 #' @param female_value Value used to identify females in sex_column.
 #' @param male_value Value used to identify males in sex_column.
-#' @param format_value Number of decimal places for percentage formatting.
-#' @param round_value Number of decimal places for rounding statistics.
+#' @param format_value Number of decimal places for formatting rounded values.
+#' @param round_value Number of decimal places for rounding
 #' @param completed_table_statistic Which statistic to show in the final table. 
 #'        Options: 
 #'        "mean_sd", 
@@ -291,6 +291,3 @@ generate_demographic_tables <- function(
   
   return(result)
 }
-
-
-
