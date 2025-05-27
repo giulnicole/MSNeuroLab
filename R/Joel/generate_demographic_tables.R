@@ -93,6 +93,9 @@ generate_demographic_tables <- function(
   # Convert to data frame. In case its tibble
   input_data <- as.data.frame(input_data)
   
+  # Keep only column names that are in the input data frame
+  parameter_list <- parameter_list[parameter_list %in% names(input_data)]
+  
   # Keep only numeric columns, excluding sex and group columns
   input_data <- input_data[c(sex_column, group_column, names(input_data)[sapply(input_data, is.numeric)])]
   
