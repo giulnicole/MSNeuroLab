@@ -47,35 +47,37 @@
 #' # Using the function
 #' results <- generate_demographic_tables()
 #' print(results$demographic_statistics)
+#' print(results$group_wise_comparisons)
 #' print(results$sex_ratios)
 #' print(results$complete_table)
+#' 
 #' }                             
 #'
 #' @export
-generate_demographic_tables_2 <- function(
-    input_data = mtcars,                           # Input data frame
+generate_demographic_tables <- function(
+    input_data = mtcars,                           # Input data frame or tibble
     parameter_list = c("mpg", "disp", "qsec"),     # Columns to analyze. Rows in output will appear in this order, though n and sex ratios will be the top rows.
-    group_column = "am",                           # Grouping variable
-    sex_column = "vs",                             # (optional) Sex variable
+    group_column = "am",                           # Column containing groups to compare. No group defined in this column can be all NA!
+    completed_table_statistic = "median",          # Descriptive statistic to show in final table
+    freeform_brackets = "Q1_Q3",                   # (Optional) Statistic to show in brackets after main statistic
+    groupwise_test = "wilcox",                     # Statistical test to use for group-wise comparisons ("wilcox" or "ttest")
+    multiple_comparison_correction = "BH",         # (Optional) P-value multiple comparison correction method (NULL to skip)
+    comparison_list = NULL,                        # (Optional) List of comparisons. Restricts the number of group wise comparisons and multiple comparison correction. eg. list(c("column1", "column2"),c("column1","column3"))
+    multiple_comparison_correction_brackets = FALSE, # (Optional) include corrected group-wise comparisons value in brackets after main p-value
+    groupwise_95CI = FALSE,                        # (Optional) include 95% CI from group-wise comparison test in square brackets after comparison p-value
+    sex_column = "vs",                             # (optional) Categorical sex variable to calculate sex ratio
     female_value = 0,                              # (optional, but required with sex_column) Female identifier
     male_value = 1,                                # (optional, but required with sex_column) Male identifier
-    format_value = 1,                              # Minimum number of decimals to show
+    completed_table_sex_statistic = "n_m_f",       # (Optional, but required with sex_column) Sex statistic for final table, eg. sex ratio
+    group_n = TRUE,                                # Include group n in the formatted output table
+    format_value = 2,                              # Minimum number of decimals to show
     p_format_value = 3,                            # Minimum number of decimals to show for p-values
-    completed_table_statistic = "median",          # Statistic to show in final table
     mean_if_normal = FALSE,                        # Use mean and sd if parameter is normally distributed
-    ttest_if_normal = FALSE,                       # Use t-test if parameter is normally distributed
-    groupwise_test = "wilcox",                     # Statistical test to use for group-wise comparisons ("wilcox" or "ttest")
-    group_n = TRUE,                                # Include n in the formatted output table
-    groupwise_95CI = FALSE,                        # (Optional) include 95% CI for group-wise comparisons in brackets after p-value
-    completed_table_sex_statistic = "n_m_f",       # (Optional) Sex statistic for final table
-    multiple_comparison_correction = "BH",         # (Optional) P-value multiple comparison correction method (NULL to skip)
-    multiple_comparison_correction_brackets = FALSE, # (Optional) include corrected group-wise comparisons value in brackets after main p-value
-    freeform_brackets = "Q1_Q3",                   # (Optional) Statistic to show in brackets after main statistic
-    comparison_list = NULL                         # (Optional) Specific comparisons (optional, will limit group wise comparisons to the ones in this list)
+    ttest_if_normal = FALSE                        # Use t-test if parameter is normally distributed
 ) {
   
   # Dependencies
-  required_packages <- c("tibble", "tidyr")
+  required_packages <- c("tibble", "tidyr", "dplyr")
   
   # Check for missing packages
   missing_packages <- required_packages[!required_packages %in% installed.packages()[,"Package"]]
@@ -86,6 +88,7 @@ generate_demographic_tables_2 <- function(
   
   require(tibble)
   require(tidyr)
+  require(dplyr)
   
   # Convert to data frame. In case its tibble
   input_data <- as.data.frame(input_data)
