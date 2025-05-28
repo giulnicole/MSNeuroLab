@@ -76,7 +76,7 @@ generate_demographic_tables <- function(
     p_format_value = 3,                            # Minimum number of decimals to show for p-values
     mean_if_normal = FALSE,                        # Use mean and sd if parameter is normally distributed
     ttest_if_normal = FALSE,                       # Use t-test if parameter is normally distributed
-    ordinal_columns = "EDSS"                       # List of ordinal columns. Median and wilcox test are shown for these regardless of their distribution.
+    ordinal_columns = NULL                       # List of ordinal columns. Median and wilcox test are shown for these regardless of their distribution.
 ) {
   
   # Dependencies
@@ -111,25 +111,26 @@ generate_demographic_tables <- function(
   } }
   
   # Make sure ordinal columns are in parameter list
-  if (!(ordinal_columns %in% parameter_list)) {
+  if (!is.null(ordinal_columns)) {if (!(ordinal_columns %in% parameter_list)) {
     parameter_list <- c(parameter_list,ordinal_columns)
-  }
+  }}
   
-  # Keep only numeric columns, excluding sex and group columns
-  keep_cols <- c(sex_column, group_column, names(input_data)[sapply(input_data, is.numeric)])
-  keep_cols <- keep_cols[!is.null(keep_cols)]
-  excluded_columns <- setdiff(names(input_data), keep_cols)
-  excluded_columns <- excluded_columns[excluded_columns %in% parameter_list]
-  if (length(excluded_columns) > 0) {
-    input_data <- input_data[keep_cols]
-    text_output <- paste0(text_output,"\n\nNon-numeric parameter(s) '",paste(excluded_columns, collapse = "', '"),"' were excluded from statistics calculations.")
+  # Filter to keep only appropriate columns and update parameter_list accordingly
+  numeric_cols <- names(input_data)[sapply(input_data, is.numeric)]
+  essential_cols <- c(sex_column, group_column)
+  essential_cols <- essential_cols[!is.null(essential_cols)]
+  keep_cols <- unique(c(essential_cols, numeric_cols))
+  missing_columns <- parameter_list[!parameter_list %in% names(input_data)] # Check what's being excluded from parameter_list and why
+  non_numeric_columns <- parameter_list[parameter_list %in% names(input_data) & 
+                                          !parameter_list %in% numeric_cols &
+                                          !parameter_list %in% essential_cols]
+  parameter_list <- parameter_list[parameter_list %in% keep_cols] # Update parameter_list to only include valid columns
+  input_data <- input_data[, keep_cols, drop = FALSE] # Filter input_data
+  if (length(missing_columns) > 0) { # Report exclusions
+    text_output <- paste0(text_output,"\n\nSpecified parameter(s) '",paste(missing_columns, collapse = "', '"),"' are not column names in the input data and were excluded.")
   }
-
-  # Keep only column names that are in the input data frame
-  excluded <- parameter_list[!parameter_list %in% names(input_data)]
-  if (length(excluded) > 0) {
-    parameter_list <- parameter_list[parameter_list %in% names(input_data)]
-    text_output <- paste0(text_output,"\n\nSpecified parameter(s) '",paste(excluded, collapse = "', '"),"' are not column names in the input data and were excluded.")
+  if (length(non_numeric_columns) > 0) { # Report exclusions
+    text_output <- paste0(text_output,"\n\nNon-numeric parameter(s) '",paste(non_numeric_columns, collapse = "', '"),"' were excluded from statistics calculations.")
   }
   
   # Make sure sex column is not in parameter list
