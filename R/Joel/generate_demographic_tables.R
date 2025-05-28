@@ -62,9 +62,11 @@ generate_demographic_tables <- function(
     freeform_brackets = "Q1_Q3",                   # (Optional) Statistic to show in brackets after main statistic
     groupwise_test = "wilcox",                     # Statistical test to use for group-wise comparisons ("wilcox" or "ttest")
     multiple_comparison_correction = "BH",         # (Optional) P-value multiple comparison correction method (NULL to skip)
-    comparison_list = NULL,                        # (Optional) List of comparisons. Restricts the number of group wise comparisons and multiple comparison correction. eg. list(c("column1", "column2"),c("column1","column3"))
+    comparison_list = NULL,                        # (Optional) List of comparisons. Restricts the number of group wise comparisons and multiple comparison correction.
+                                                   # eg. list(c("column1", "column2"),c("column1","column3")). Use this if, for example, you want to compare all MS to HC and MS subgroups 
+                                                   # to HC, but not MS subgroups to all MS. You need to create the dataframe with these overlapping groups in one column separately.
     multiple_comparison_correction_brackets = FALSE, # (Optional) include corrected group-wise comparisons value in brackets after main p-value
-    groupwise_95CI = FALSE,                        # (Optional) include 95% CI from group-wise comparison test in square brackets after comparison p-value
+    groupwise_95CI = FALSE,                        # (Optional) include 95% CI from group-wise comparison test in square brackets after comparison p-value. These are naive and not adjusted.
     sex_column = "vs",                             # (optional) Categorical sex variable to calculate sex ratio
     female_value = 0,                              # (optional, but required with sex_column) Female identifier
     male_value = 1,                                # (optional, but required with sex_column) Male identifier
@@ -73,7 +75,8 @@ generate_demographic_tables <- function(
     format_value = 2,                              # Minimum number of decimals to show
     p_format_value = 3,                            # Minimum number of decimals to show for p-values
     mean_if_normal = FALSE,                        # Use mean and sd if parameter is normally distributed
-    ttest_if_normal = FALSE                        # Use t-test if parameter is normally distributed
+    ttest_if_normal = FALSE,                       # Use t-test if parameter is normally distributed
+    ordinal_columns = "EDSS"                       # List of ordinal columns. Median and wilcox test are shown for these regardless of their distribution.
 ) {
   
   # Dependencies
@@ -90,14 +93,48 @@ generate_demographic_tables <- function(
   require(tidyr)
   require(dplyr)
   
-  # Convert to data frame. In case its tibble
+  # 0. ensure input is appropriate ####
+  text_output <- "" # This string records information about settings and exclusions
+  
+  # Convert to data frame. In case its a tibble
   input_data <- as.data.frame(input_data)
   
-  # Keep only column names that are in the input data frame
-  parameter_list <- parameter_list[parameter_list %in% names(input_data)]
+  # Check that group column is in input data
+  if (!(group_column %in% names(input_data))) {
+    stop(paste0("Specified group column '", group_column, "' is not present in the input data."))
+  }
+  
+  # Check that sex column is in input data
+  if (!is.null(sex_column)) {if (!( sex_column %in% names(input_data))) {
+    text_output <- paste0(text_output,"\n\nSex column '", sex_column, "' is not present in the input data and sex statistic was not calculated.")
+    sex_column <- NULL
+  } }
+  
+  # Make sure ordinal columns are in parameter list
+  if (!(ordinal_columns %in% parameter_list)) {
+    parameter_list <- c(parameter_list,ordinal_columns)
+  }
   
   # Keep only numeric columns, excluding sex and group columns
-  input_data <- input_data[c(sex_column, group_column, names(input_data)[sapply(input_data, is.numeric)])]
+  keep_cols <- c(sex_column, group_column, names(input_data)[sapply(input_data, is.numeric)])
+  keep_cols <- keep_cols[!is.null(keep_cols)]
+  excluded_columns <- setdiff(names(input_data), keep_cols)
+  excluded_columns <- excluded_columns[excluded_columns %in% parameter_list]
+  if (length(excluded_columns) > 0) {
+    input_data <- input_data[keep_cols]
+    text_output <- paste0(text_output,"\n\nNon-numeric parameter(s) '",paste(excluded_columns, collapse = "', '"),"' were excluded from statistics calculations.")
+  }
+
+  # Keep only column names that are in the input data frame
+  excluded <- parameter_list[!parameter_list %in% names(input_data)]
+  if (length(excluded) > 0) {
+    parameter_list <- parameter_list[parameter_list %in% names(input_data)]
+    text_output <- paste0(text_output,"\n\nSpecified parameter(s) '",paste(excluded, collapse = "', '"),"' are not column names in the input data and were excluded.")
+  }
+  
+  # Make sure sex column is not in parameter list
+  parameter_list <- parameter_list[!parameter_list %in% sex_column]
+  
   
   # 1. Collect all possible group comparisons ####
   group_values <- unique(input_data[[group_column]])
@@ -148,9 +185,14 @@ generate_demographic_tables <- function(
       temp$min_max <- paste0(temp$min," - ",temp$max)
       
       ## Freeform statistic, this is the formatted statistic with range or sd etc. in brackets ####
-      temp$freeform <- temp[[completed_table_statistic]]
-      if(!is.null(freeform_brackets)) {
-        temp$freeform <- paste0(temp$freeform," (",temp[[freeform_brackets]],")")
+      # Override for ordinal columns - always use median (Q1-Q3)
+      if (loop_column %in% ordinal_columns) {
+        temp$freeform <- paste0(temp$median, " (", temp$Q1_Q3, ")")
+      } else {
+        temp$freeform <- temp[[completed_table_statistic]]
+        if(!is.null(freeform_brackets)) {
+          temp$freeform <- paste0(temp$freeform," (",temp[[freeform_brackets]],")")
+        }
       }
       
       ## Shapiro-Wilk test for normality (if appropriate) ####
@@ -346,7 +388,9 @@ generate_demographic_tables <- function(
   if (mean_if_normal == TRUE) {
     for (i in 1:nrow(table_stats)) {
       param <- table_stats$parameter[i]
-      if (parameter_normality$all_groups_normal[parameter_normality$parameter == param]) {
+      # Skip ordinal columns - they should always use median (Q1-Q3)
+      if (!(param %in% ordinal_columns) && 
+          parameter_normality$all_groups_normal[parameter_normality$parameter == param]) {
         table_stats$freeform[i] <- paste0(table_stats$mean[i], " (", table_stats$sd[i], ")")
       }
     }
@@ -368,6 +412,24 @@ generate_demographic_tables <- function(
     results_for_main <- if(groupwise_test == "wilcox") wilcox_results_corrected else ttest_results_corrected
   }
   
+  ## Create ordinal column rows ####
+  if (!is.null(ordinal_columns)) {
+   # re-create group wise results table with appropriate data for ordinal columns
+    if (multiple_comparison_correction_brackets == TRUE) {
+      wilcox_for_ordinals <- wilcox_results
+    } else if (is.null(multiple_comparison_correction)) {
+      wilcox_for_ordinals <- wilcox_results
+    } else {
+      wilcox_for_ordinals <- wilcox_results_corrected
+    }
+    
+    # Replace ordinal parameter rows with wilcox results
+    for (loop_ordinal in ordinal_columns) { #in the beginning of code it is ensured that this column is in parameter list and thus in results_for_main
+      results_for_main[results_for_main$parameter == loop_ordinal,] <- wilcox_for_ordinals[wilcox_for_ordinals$parameter == loop_ordinal,]
+    }
+  }
+  
+  
   ## Merge group-wise comparison results with wide table (sort = FALSE to preserve order) ####
   table_final <- merge(wide_table, results_for_main, by = "parameter", all.x = TRUE, sort = FALSE)
   
@@ -378,8 +440,9 @@ generate_demographic_tables <- function(
     ci_columns <- names(table_final)[grepl(" vs ", names(table_final)) & grepl("95CI", names(table_final))]
     
     for (loop_parameter in table_final$parameter) {
-      # Check if ALL groups are normal for this parameter
-      if (parameter_normality$all_groups_normal[parameter_normality$parameter == loop_parameter]) {
+      # Check if ALL groups are normal for this parameter AND it's not an ordinal column
+      if (!(loop_parameter %in% ordinal_columns) && 
+          parameter_normality$all_groups_normal[parameter_normality$parameter == loop_parameter]) {
         
         ### Replace p-values with t-test results ####
         for (loop_comparison in p_columns) {
@@ -395,18 +458,17 @@ generate_demographic_tables <- function(
         }
         
         ### Replace CIs with t-test CIs - use consistent source with p-values ####
-        for (loop_ci_column in ci_columns) {
-          if (loop_ci_column %in% names(table_final)) {
-            # Use same correction status as p-values for consistency
-            if (!is.null(multiple_comparison_correction) & multiple_comparison_correction_brackets == FALSE) {
-              # Use corrected t-test CIs to match corrected p-values
-              table_final[[loop_ci_column]][table_final$parameter == loop_parameter] <- 
-                ttest_results_corrected[[loop_ci_column]][ttest_results_corrected$parameter == loop_parameter]
-            } else {
-              # Use uncorrected t-test CIs to match uncorrected p-values  
-              table_final[[loop_ci_column]][table_final$parameter == loop_parameter] <- 
-                ttest_results[[loop_ci_column]][ttest_results$parameter == loop_parameter]
-            }
+        
+        if (loop_ci_column %in% names(table_final)) {
+          # Use same correction status as p-values for consistency
+          if (!is.null(multiple_comparison_correction) & multiple_comparison_correction_brackets == FALSE) {
+            # Use corrected t-test CIs to match corrected p-values
+            table_final[[loop_ci_column]][table_final$parameter == loop_parameter] <- 
+              ttest_results_corrected[[loop_ci_column]][ttest_results_corrected$parameter == loop_parameter]
+          } else {
+            # Use uncorrected t-test CIs to match uncorrected p-values  
+            table_final[[loop_ci_column]][table_final$parameter == loop_parameter] <- 
+              ttest_results[[loop_ci_column]][ttest_results$parameter == loop_parameter]
           }
         }
       }
@@ -438,6 +500,7 @@ generate_demographic_tables <- function(
       for (loop_parameter in table_final$parameter) {
         # Determine which corrected results to use based on parameter normality
         if (ttest_if_normal == TRUE && 
+            !(loop_parameter %in% ordinal_columns) &&
             parameter_normality$all_groups_normal[parameter_normality$parameter == loop_parameter]) {
           # Use corrected t-test results
           corrected_p <- ttest_results_corrected[[loop_p_column]][ttest_results_corrected$parameter == loop_parameter]
@@ -499,7 +562,9 @@ generate_demographic_tables <- function(
   rownames(table_final) <- NULL
   
   # combine result tables for return
+  cat(text_output)
   result <- list(
+    report = text_output,
     demographic_statistics = table_stats,
     group_wise_comparisons = table_groupwise,
     sex_ratios = table_sex,
