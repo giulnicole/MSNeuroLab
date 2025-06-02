@@ -180,9 +180,21 @@ similarity_analysis <- function(
                   size = paste0("Similarity \n(", distance_metric, ")")) +
     ggplot2::theme_minimal()
   
-  # Additional metrics that can be derived from results 
+  # Distances were calculated with normalized values. Change the output columns back to non normalized values. This should be fixed somewhere above...
+  for (loop_ID in results$Patient_ID) {
+    value <- data[[comparison_variable]][data$ID == loop_ID]
+    results[results$Patient_ID == loop_ID,1] <- value
+  }
+  for (loop_ID in results$Control_ID) {
+    value <- data[[comparison_variable]][data$ID == loop_ID]
+    results[results$Control_ID == loop_ID,2] <- value
+  }
+  
+  # Additional metrics that can be derived from results
+  if ( is.numeric(results[,2]) & is.numeric(results[,2]) ) {
   results$Gap_comparison <- results[,2]-results[,1] # difference in comparison_variable
-
+  }
+  
   # Return both results and plot
   result <- list(results = results, plot = p)
   return(result)

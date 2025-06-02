@@ -437,8 +437,8 @@ stratified_distance_analysis <- function(
   
   # Create the plot with special handling for empty strata
   best_matches_plot <- ggplot2::ggplot(plot_data, ggplot2::aes(x = Patient_Stratum, 
-                                                              y = Control_Stratum,
-                                                              size = Distance)) +
+                                                               y = Control_Stratum,
+                                                               size = Distance)) +
     # For non-empty strata
     ggplot2::geom_point(data = subset(plot_data, !IsEmpty), 
                         alpha = 0.7, na.rm = TRUE) +
@@ -448,7 +448,7 @@ stratified_distance_analysis <- function(
     # Regular text labels for non-empty strata
     ggplot2::geom_text(data = subset(plot_data, !IsEmpty),
                        ggplot2::aes(label = ifelse(!is.na(Distance), 
-                                                  round(Distance, 2), "")), 
+                                                   round(Distance, 2), "")), 
                        vjust = 2, size = 3) +
     # "Empty" label for empty strata
     ggplot2::geom_text(data = subset(plot_data, IsEmpty),
