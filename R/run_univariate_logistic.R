@@ -1,7 +1,7 @@
 #' @title run_univariate_logistic
 #' @description
 #' \code{\link{run_univariate_logistic}} This function performs univariate logistic regression analyses for a set of predictor variables against a binary outcome variable in a given dataset. It returns a tidy data frame with odds ratios (OR), 95% confidence intervals (CI), and p-values for each predictor.
-#'
+#' 
 #' @param data A data frame containing the outcome and predictor variables.
 #' @param outcome_var A string specifying the name of the binary outcome variable.
 #'                    If the variable is a factor or character, values equal to "Yes" are
