@@ -19,9 +19,8 @@
 #' 
 #' @examples
 #' 
-#' library(readxl)
 #' # Reading the data
-#' data <- read_excel("Data/examination_dataset1.xlsx")
+#' data<- MSNeuroLab::data
 #' # Selecting variables to test at univariate 
 #' variables_to_test <- colnames(data)[c(3:8)]
 #' # Using the function

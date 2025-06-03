@@ -21,9 +21,8 @@ test_with_levene(data, group_var)
 }
 \examples{
 
-library(readxl)
 # Reading the data
-data<- data(data)
+data<- MSNeuroLab::data
 # Using the function
 test_stat <- test_with_levene(data = data[, c(1:4)],  group_var="sex")
 
