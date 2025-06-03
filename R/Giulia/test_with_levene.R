@@ -5,24 +5,19 @@
 #' @param data data.frame object with the variables (numeric or categorical) on which performing the statistical comparisons
 #' @param group_var categorical variable with two levels (classes) in quotes
 #' 
-#' @name test_with_levene
 #'
 #' @return
+#' \describe{
 #'  \item{final_table}{a data.frame object with results unlisted (with bindrow function}
-#'  
+#'  }
 #'  
 #' @examples
 #' 
 #' library(readxl)
-#' 
 #' # Reading the data
 #' data<- read_excel("Data/examination_dataset1.xlsx")
-#'  
 #' # Using the function
 #' test_stat <- test_with_levene(data = data[, c(1:4)],  group_var="sex")
-#'
-#'
-#'                           
 #'
 #'
 #'  

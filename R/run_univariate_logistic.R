@@ -20,9 +20,12 @@
 #' @examples
 #' 
 #' library(readxl)
-#'data <- read_excel("Data/examination_dataset1.xlsx")
-#'variables_to_test <- colnames(data)[c(3:8)]
-#'res_univariates <- run_univariate_logistic(data, "smoker", predictors = variables_to_test)
+#' # Reading the data
+#' data <- read_excel("Data/examination_dataset1.xlsx")
+#' # Selecting variables to test at univariate 
+#' variables_to_test <- colnames(data)[c(3:8)]
+#' # Using the function
+#' res_univariates <- run_univariate_logistic(data, "smoker", predictors = variables_to_test)
 #'
 #'
 #'

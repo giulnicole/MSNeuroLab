@@ -31,8 +31,11 @@ A data frame with the following columns:
 \examples{
 
 library(readxl)
+# Reading the data
 data <- read_excel("Data/examination_dataset1.xlsx")
+# Selecting variables to test at univariate 
 variables_to_test <- colnames(data)[c(3:8)]
+# Using the function
 res_univariates <- run_univariate_logistic(data, "smoker", predictors = variables_to_test)
 
 
