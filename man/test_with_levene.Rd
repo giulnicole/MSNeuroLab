@@ -23,7 +23,7 @@ test_with_levene(data, group_var)
 
 library(readxl)
 # Reading the data
-data<- read_excel("Data/examination_dataset1.xlsx")
+data<- data(data)
 # Using the function
 test_stat <- test_with_levene(data = data[, c(1:4)],  group_var="sex")
 
