@@ -6,7 +6,7 @@
 #' scales them, and runs PLS-DA using the mixOmics package.
 #' It also plots the individual samples and  variables based on a cutoff of correlation.
 #'
-#' @param data A dataframe containing numeric and possibly non-numeric variables.
+#' @param data A dataframe containing numeric and possibly non-numeric variables. If not, classify the variables according to data_for_plsda function above
 #' @param group A factor or a vector that can be coerced to a factor, representing class labels.
 #' @param ncomp Number of PLS components to compute. Default is 4.
 #' @param var.cutoff Cutoff for variable correlation between covariates in plotVar. Default is 0.6.
@@ -17,11 +17,10 @@
 #' \dontrun{
 #' 
 #' library(mixOmics)
-#' library(readxl)
 #' 
 #' # Reading the data
-#' data<- read_excel("Data/examination_dataset1.xlsx")
-#'  
+#' data<- MSNeuroLab::data
+#' 
 #'  # Using the function for separating variables
 #'  data.plsda <- data_for_plsda(data)
 #'  
@@ -64,7 +63,7 @@ run_plsda_clean <- function(data, group, ncomp = 3, var.cutoff = 0.6) {
 }
 
 
-
+#' @noRd
 data_for_plsda <- function(data){
   
   suppressWarnings({
