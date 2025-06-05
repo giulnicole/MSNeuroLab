@@ -1,4 +1,4 @@
-## PSpaghetti plots with gittered points and line (on x axis)
+## Spaghetti plot with gittered points and line (on x axis)
 
 library(dplyr)
 library(ggplot2)
