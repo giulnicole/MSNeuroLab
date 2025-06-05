@@ -3,7 +3,12 @@
 library(dplyr)
 library(ggplot2)
 
-# Set seed for reproducibility
+
+# Longitudinal data format
+# 1 col with ID, 2 col with Group (Treated, Untreated), 3 col with Time (baseline, follow-up)
+
+
+# This line serves for the jitter step
 set.seed(42)
 
 # Apply jitter only to the plotting x-position, but not change the actual 'Time' variable
@@ -28,4 +33,7 @@ ggplot(df_jittered, aes(x = Time_jittered, y = rBRL, group = ID, color = as.fact
             color = "black", size = 1.2) +  # mean lines (not jittered)
   scale_x_continuous(breaks = c(1, 2), labels = c("baseline", "follow-up")) +
   theme_minimal()
+
+
+
 
