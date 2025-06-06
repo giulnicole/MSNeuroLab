@@ -48,10 +48,12 @@ run_univariate_logistic_repeated <- function(data, outcome_var, predictors, time
     stringsAsFactors = FALSE
   )
   
+
   for (var in predictors) {
     formula <- as.formula(paste(outcome_var, "~",  time,  "+ (1 | ID) + " , var))
     model <- glmer(formula, data, family = binomial)
     
+    print("ok")
     coef_summary <- as.data.frame(summary(model)$coefficients)
     OR <- exp(coef_summary[5,1])  # Odds ratio
     SE <- exp(coef_summary[5,2])
