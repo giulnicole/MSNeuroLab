@@ -37,6 +37,7 @@ test_with_levene <- function(data, group_var) {
   for (var in names(data)) {
     if (var == group_var) next
     
+    # Only process numeric variables
     if (is.numeric(data[[var]])) {
       
       # Get actual group names
@@ -97,13 +98,15 @@ test_with_levene <- function(data, group_var) {
         test_used <- "Wilcoxon"
       }
       
+      # Create formatted columns
+      overall_median <- round(median(data[[var]], na.rm = TRUE), 2)
+      overall_mean <- round(mean(data[[var]], na.rm = TRUE), 2)
+      overall_sd <- round(sd(data[[var]], na.rm = TRUE), 2)
+      
       summary_stats <- data.frame(
         Variable = var,
-        Median = round(median(data[[var]], na.rm = TRUE), 2),
-        Q1 = q1,
-        Q3 = q3,
-        Mean = round(mean(data[[var]], na.rm = TRUE), 2),
-        SD = round(sd(data[[var]], na.rm = TRUE), 2),
+        `Median (Q1-Q3)` = paste0(overall_median, " (", q1, "-", q3, ")"),
+        `Mean (SD)` = paste0(overall_mean, " (", overall_sd, ")"),
         Symmetric = ifelse(symmetric, "Yes", "No"),
         Equal_Var = ifelse(equal_var, "Yes", "No"),
         Test = test_used,
@@ -111,42 +114,15 @@ test_with_levene <- function(data, group_var) {
         stringsAsFactors = FALSE
       )
       
-      # Add group-specific columns with actual names
-      summary_stats[[paste0("Median_", group1)]] <- med_g1
-      summary_stats[[paste0("Q1_", group1)]] <- q1_g1
-      summary_stats[[paste0("Q3_", group1)]] <- q3_g1
-      summary_stats[[paste0("Mean_", group1)]] <- mean_g1
-      summary_stats[[paste0("SD_", group1)]] <- sd_g1
-      summary_stats[[paste0("Median_", group2)]] <- med_g2
-      summary_stats[[paste0("Q1_", group2)]] <- q1_g2
-      summary_stats[[paste0("Q3_", group2)]] <- q3_g2
-      summary_stats[[paste0("Mean_", group2)]] <- mean_g2
-      summary_stats[[paste0("SD_", group2)]] <- sd_g2
+      # Add group-specific formatted columns
+      summary_stats[[paste0("Median (Q1-Q3)_", group1)]] <- paste0(med_g1, " (", q1_g1, "-", q3_g1, ")")
+      summary_stats[[paste0("Mean (SD)_", group1)]] <- paste0(mean_g1, " (", sd_g1, ")")
+      summary_stats[[paste0("Median (Q1-Q3)_", group2)]] <- paste0(med_g2, " (", q1_g2, "-", q3_g2, ")")
+      summary_stats[[paste0("Mean (SD)_", group2)]] <- paste0(mean_g2, " (", sd_g2, ")")
       
       results[[var]] <- summary_stats
-      
-    } else if (is.factor(data[[var]]) || is.character(data[[var]])) {
-      tab <- table(data[[var]], data[[group_var]])
-      
-      if (any(tab < 5)) {
-        cat_test <- fisher.test(tab)
-        test_used <- "Fisher"
-      } else {
-        cat_test <- chisq.test(tab)
-        test_used <- "Chi-squared"
-      }
-      
-      freq_summary <- data.frame(
-        Variable = var,
-        Median = NA, Q1 = NA, Q3 = NA, Mean = NA, SD = NA,
-        Symmetric = NA, Equal_Var = NA,
-        Test = test_used,
-        P_value = round(cat_test$p.value, 4),
-        stringsAsFactors = FALSE
-      )
-      
-      results[[var]] <- freq_summary
     }
+    # Removed the categorical variable processing section entirely
   }
   
   final_table <- bind_rows(results)
