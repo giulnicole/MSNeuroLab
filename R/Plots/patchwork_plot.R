@@ -1,4 +1,8 @@
 
+### Patchwork plot 
+
+
+# Combining plots into pre-defined sequences (1 window)
 
 if(!require('patchwork')) {
   install.packages('patchwork')
@@ -6,7 +10,6 @@ if(!require('patchwork')) {
 }
 
 library(ggplot2)
-
 
 
 p1 <- ggplot(mtcars) + geom_point(aes(mpg, disp))
@@ -21,11 +24,9 @@ p5 <- ggplot(mtcars) + geom_violin(aes(cyl, mpg, group = cyl))
 #wrap_plots(p1, p2, p3, p4, p5)
 
 
-
-# Or add them as a list...
+# Or add them as a list
 plots <- list(p1, p2, p3, p4, p5)
 #wrap_plots(plots)
-
 
 
 # Match plots to areas by name

@@ -4,7 +4,6 @@
 library(dplyr)
 library(ggplot2)
 
-
 # Longitudinal data format
 # 1 col with ID, 2 col with Group (Treated, Untreated), 3 col with Time (baseline, follow-up), 4 col with values that have to be compared in teh 2 timepoints (rBRLs)
 
