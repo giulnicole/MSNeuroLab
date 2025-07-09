@@ -9,29 +9,24 @@ test_with_levene(data, group_var)
 \arguments{
 \item{data}{data.frame object with the variables (numeric or categorical) on which performing the statistical comparisons}
 
-\item{group_var}{grouping variable with two groups (classes) in quotes}
+\item{group_var}{categorical variable with two levels (classes) in quotes}
 }
 \value{
-\item{final_table}{a data.frame object with results unlisted (with bindrow function)}
+\describe{
+\item{final_table}{a data.frame object with results unlisted (with bindrow function}
+}
 }
 \description{
-\code{\link{test_with_levene}} Function for comparing statistical comparison between numeric variables, testing for assumptions on varaibles' distribution and categorical variables
+\code{\link{test_with_levene}} Function for comparing statistical comparison between numeric variables, testing for assumptions on variables' distribution within levels of categorical variable
 }
 \examples{
-\dontrun{
-
-library(readxl)
 
 # Reading the data
-data<- read_excel("Data/examination_dataset1.xlsx")
- 
+data<- MSNeuroLab::data
 # Using the function
 test_stat <- test_with_levene(data = data[, c(1:4)],  group_var="sex")
 
- }                             
-
 
  
  
- @export
 }
