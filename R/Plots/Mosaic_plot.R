@@ -1,4 +1,8 @@
 
+# Matrix proportion
+mat <- matrix(c(73, 27, 23, 77), nrow = 2, byrow = TRUE,
+              dimnames = list(Group = c("PF% Ventricoli < 2.12","PF% Ventricoli >= 2.12"),
+                              Category = c("Low","High")))
 
 
 # Draw the mosaic plot and capture tile coordinates
@@ -10,6 +14,7 @@ mp <- mosaicplot(mat,
                  cex.axis = 1, cex.lab = 1, cex.main = 2,
                  las = 1,       # y-axis labels horizontal
                  border = "white")  
+
 
 # Add percentages
 # Convert counts to percentages
