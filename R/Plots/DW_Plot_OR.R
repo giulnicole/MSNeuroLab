@@ -3,7 +3,6 @@
 
 # results_clean has columns: term, OR, CI_low, CI_high
 
-
 library(dplyr)
 library(ggplot2)
 library(dotwhisker)
