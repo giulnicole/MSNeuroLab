@@ -1,0 +1,124 @@
+---
+title: "Assumptions and linear models with diagnostics"
+author: "Giulia Nicole Baldrighi"
+date: "2025-09-03"
+output: html_document
+---
+
+## Introduction
+
+Linear regression is used to model the relationship between a **continuous outcome** and one or more predictor variables.  
+
+Before interpreting results, you should check the following assumptions:
+
+1. **Linearity**: Relationship between predictors and outcome is linear.  
+2. **Normality of residuals**: Residuals are normally distributed.  
+3. **Homoscedasticity**: Constant variance of residuals across predicted values.  
+4. **Independence of errors**.  
+5. **No multicollinearity**: Predictors are not highly correlated.  
+6. **No influential points**: No single observation unduly affects the model.
+
+---
+
+## Data Preparation
+
+```{r, warning=F}
+library(dplyr)
+library(ggplot2)
+library(car)
+library(broom)
+library(knitr)
+library(reshape2)
+```
+
+
+```{r}
+# Example dataset
+set.seed(123)
+data <- data.frame(
+  ID = 1:60,
+  Age = rnorm(60, 50, 10),
+  BMI = rnorm(60, 25, 4),
+  Exercise = rnorm(60, 3, 1),
+  BloodPressure = rnorm(60, 120, 15)  # Continuous outcome
+)
+
+predictors <- c("Age", "BMI", "Exercise")
+outcome <- "BloodPressure"
+```
+
+
+## Assumptions before the model
+
+### Check distributions and outliers
+
+```{r}
+# Histogram and boxplot
+data %>%
+  select(all_of(c(outcome, predictors))) %>%
+  melt(id.vars = NULL) %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(bins = 15, fill = "steelblue", color = "white") +
+  facet_wrap(~variable, scales = "free") +
+  theme_minimal()
+
+```
+
+
+
+### Normality outcome 
+
+```{r}
+shapiro.test(data[[outcome]])
+```
+p > 0.05 suggests approximate normality.
+
+
+### Homogeneity of variance (Levene’s test)
+
+
+```{r}
+library(car)
+# Example: grouping by median split of Age
+data$AgeGroup <- ifelse(data$Age > median(data$Age), "High", "Low")
+leveneTest(data[[outcome]] ~ data$AgeGroup)
+```
+
+p > 0.05 suggests equal variance across groups.
+
+
+
+### Correlation between predictors (multicollinearity)
+
+```{r}
+cor(data %>% select(all_of(predictors)))
+vif(lm(as.formula(paste(outcome, "~", paste(predictors, collapse = "+"))), data=data))
+
+```
+
+VIF > 5–10 indicates high multicollinearity.
+
+
+## Fit linear model
+```{r}
+results_list <- list()
+
+for (var in predictors) {
+  formula <- as.formula(paste(outcome, "~", var))
+  model <- lm(formula, data = data)
+  
+  # Model diagnostics
+  par(mfrow=c(2,2))
+  plot(model, main = paste("Diagnostics for", var))
+  
+  tidy_model <- broom::tidy(model)
+  results_list[[var]] <- tidy_model
+}
+
+results_table <- bind_rows(results_list) %>%
+  rename(Predictor = term)
+
+knitr::kable(results_table, digits = 3, caption = "Linear Regression Results for Each Predictor")
+
+```
+

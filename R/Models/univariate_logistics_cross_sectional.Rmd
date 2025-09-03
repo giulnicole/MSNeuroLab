@@ -1,0 +1,147 @@
+---
+title: "Univariate Logistic Regression (Cross-sectional)"
+author: "Giulia Nicole Baldrighi"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## Introduction
+
+Univariate logistic regression is used to explore associations between predictors and a binary outcome in cross-sectional data.  
+
+Before interpreting results, it is important to check model assumptions and fit:
+
+1. Linearity of logit for continuous predictors  
+2. No highly influential observations  
+3. No extreme multicollinearity  
+4. Goodness-of-fit
+
+---
+
+### Data Preparation
+
+
+```{r, warning=F}
+# Load required packages
+library(dplyr)
+library(broom)
+library(ggplot2)
+library(knitr)
+
+# Example dataset
+set.seed(123)
+data <- data.frame(
+  ID = 1:60,  
+  Age = rnorm(60, 50, 10),
+  BMI = rnorm(60, 25, 4),
+  HOT_PET = sample(c("Yes", "No"), 60, replace = TRUE),
+  Outcome = sample(c("Yes", "No"), 60, replace = TRUE)
+)
+
+# Ensure outcome is numeric 0/1
+data$Outcome <- as.numeric(data$Outcome == "Yes")
+
+# Select predictors
+predictors <- c("Age", "BMI", "HOT_PET")
+```
+
+
+### Check frequences of the outcome (balanced categories)
+Avoid categories with too low frequencies
+```{r}
+table(data$Outcome)
+prop.table(table(data$Outcome))
+
+```
+
+### Check missing data
+```{r}
+sapply(data[predictors], function(x) sum(is.na(x)))
+
+```
+
+
+### Linearity
+
+```{r}
+# Add logit of outcome probability vs continuous predictors
+for (var in c("Age", "BMI")) {
+  model <- glm(as.formula(paste("Outcome ~", var)), data = data, family = binomial)
+  plot(data[[var]], log(model$fitted.values / (1 - model$fitted.values)),
+       xlab = var, ylab = "Logit of fitted probability",
+       main = paste("Linearity check for", var))
+  abline(lm(log(model$fitted.values / (1 - model$fitted.values)) ~ data[[var]]), col = "red")
+}
+
+```
+
+The logit should show approximately linear relationship with continuous predictors.
+## Influential observations 
+
+```{r}
+# Cook's distance for each predictor
+for (var in predictors) {
+  model <- glm(as.formula(paste("Outcome ~", var)), data = data, family = binomial)
+  cook <- cooks.distance(model)
+  plot(cook, type = "h", main = paste("Cook's distance for", var),
+       ylab = "Cook's distance")
+  abline(h = 4/(nrow(data)), col = "red", lty = 2)
+}
+```
+
+Points above the red line may be highly influential and should be checked.
+
+
+### Multicollinearity
+
+```{r}
+# Only relevant for continuous predictors
+model_all <- glm(Outcome ~ Age + BMI, data = data, family = binomial)
+car::vif(model_all)
+```
+
+VIF > 5–10 indicates high multicollinearity.
+
+
+### Goodness of fit
+```{r}
+# Hosmer-Lemeshow test
+if(!require(ResourceSelection)) install.packages("ResourceSelection")
+library(ResourceSelection)
+
+model <- glm(Outcome ~ Age + BMI + HOT_PET, data = data, family = binomial)
+hoslem.test(data$Outcome, fitted(model))
+
+```
+
+p > 0.05 suggests good fit.
+
+### Run univariate logistic regression
+
+```{r}
+results_list <- list()
+
+for (var in predictors) {
+  formula <- as.formula(paste("Outcome ~", var))
+  model <- glm(formula, data = data, family = binomial)
+  
+  tidy_model <- broom::tidy(model) %>%
+    filter(term == var) %>%
+    mutate(
+      OR = exp(estimate),
+      CI_low = exp(estimate - 1.96 * std.error),
+      CI_high = exp(estimate + 1.96 * std.error),
+      p_value = p.value
+    ) %>%
+    select(term, OR, CI_low, CI_high, p_value)
+  
+  results_list[[var]] <- tidy_model
+}
+
+results_table <- bind_rows(results_list) %>%
+  rename(Predictor = term)
+
+knitr::kable(results_table, digits = 3, caption = "Univariate Logistic Regression Results (Cross-sectional)")
+```
+
+
