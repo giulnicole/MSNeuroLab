@@ -1,5 +1,5 @@
 ############################################################
-# Script Name: mosaic_plot.R
+# Script Name: Mosaic_plot.R
 # Author: Giulia Nicole Baldrighi
 # Purpose: Create a publication-ready mosaic plot showing
 #          the proportion of categories across groups.
@@ -61,3 +61,7 @@ text(
   font = 2,
   col = "black"
 )
+
+
+# ---------------------- Optional: save plot ----------------------
+# ggsave("mosaic_plot.png", width = 9, height = 6, dpi = 300)

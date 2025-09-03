@@ -1,39 +1,87 @@
-
-### Spaghetti plot with jittered points and line (on x axis)
+############################################################
+# Script Name: Jittered_spaghetti.R
+# Author: Giulia Nicole Baldrighi
+# Purpose: Visualize longitudinal data with jittered spaghetti plot
+# Input:
+#   df with columns:
+#       ID, Group, Time (baseline, follow-up), rBRL (numeric)
+############################################################
 
 library(dplyr)
 library(ggplot2)
 
-# Longitudinal data format
-# 1 col with ID, 2 col with Group (Treated, Untreated), 3 col with Time (baseline, follow-up), 4 col with values that have to be compared in teh 2 timepoints (rBRLs)
+# ---------------------- Example data ----------------------
+# set.seed(42)
+ df <- data.frame(
+   ID = rep(1:20, each = 2),
+   Group = rep(c("Treated", "Untreated"), each = 20),
+   Time = rep(c("baseline", "follow-up"), times = 20),
+   rBRL = c(rnorm(20, 1, 0.2), rnorm(20, 1.5, 0.2))
+ )
 
-
-# This line serves for the jitter step
+# ---------------------- Prepare data ----------------------
 set.seed(42)
-
-# Apply jitter only to the plotting x-position, but not change the actual 'Time' variable
 df_jittered <- df %>%
   mutate(
     Time_num = as.numeric(factor(Time, levels = c("baseline", "follow-up"))),
-    Time_jittered = Time_num + runif(n(), -0.1, 0.1)  # consistent jitter for line + point
+    Time_jittered = Time_num + runif(n(), -0.08, 0.08) # jitter for clarity
   )
 
-# Recalculate group means (no jitter here)
+# Group means (without jitter)
 group_means <- df %>%
   group_by(Group, Time) %>%
-  summarise(mean_rBRL = mean(rBRL), .groups = "drop")
-
-# Plot using jittered x values for both points and lines
-ggplot(df_jittered, aes(x = Time_jittered, y = rBRL, group = ID, color = as.factor(Group))) +
-  geom_line(alpha = 0.3) +  # subject lines connecting jittered points
-  geom_point(size = 2) +    # jittered points
-  geom_line(data = group_means,
-            aes(x = as.numeric(factor(Time, levels = c("baseline", "follow-up"))), 
-                y = mean_rBRL, group = Group),
-            color = "black", size = 1.2) +  # mean lines (not jittered)
-  scale_x_continuous(breaks = c(1, 2), labels = c("baseline", "follow-up")) +
-  theme_minimal()
+  summarise(mean_rBRL = mean(rBRL), .groups = "drop") %>%
+  mutate(Time_num = as.numeric(factor(Time, levels = c("baseline", "follow-up"))))
 
 
+# ---------------------- Plot ----------------------
+ggplot() +
+  # Individual subject lines and points
+  geom_line(
+    data = df_jittered,
+    aes(x = Time_jittered, y = rBRL, group = ID, color = Group),
+    alpha = 0.3, size = 0.8
+  ) +
+  geom_point(
+    data = df_jittered,
+    aes(x = Time_jittered, y = rBRL, color = Group),
+    size = 2, alpha = 0.7
+  ) +
+  
+  # Group-level mean lines and points (no ID mapping)
+  geom_line(
+    data = group_means,
+    aes(x = Time_num, y = mean_rBRL, group = Group),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = group_means,
+    aes(x = Time_num, y = mean_rBRL),
+    shape = 21, fill = "white", color = "black", size = 3, stroke = 1
+  ) +
+  
+  # Axis and colors
+  scale_x_continuous(
+    breaks = c(1, 2),
+    labels = c("Baseline", "Follow-up")
+  ) +
+  scale_color_manual(values = c("Treated" = "#1f77b4", "Untreated" = "#ff7f0e")) +
+  
+  # Titles and theme
+  labs(
+    title = "Longitudinal change in rBRL by group",
+    x = "Time",
+    y = "rBRL Value",
+    color = "Group"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12),
+    legend.position = "top"
+  )
 
 
+# ---------------------- Optional: save plot ----------------------
+# ggsave("spaghetti_plot.png", width = 9, height = 6, dpi = 300)
