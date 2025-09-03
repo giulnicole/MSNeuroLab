@@ -1,0 +1,188 @@
+---
+title: "Correlation analysis"
+author: "Joel Tuomaala"
+date: "2025-09-03"
+output: html_document
+---
+## Introduction
+
+This workbook demonstrates how to perform correlation analysis between sets of numeric variables, optionally grouped by a categorical variable.  
+
+The `correlation_analysis` function calculates correlation coefficients, confidence intervals, and p-values, using methods such as **Spearman**, **Pearson**, or **Kendall**.  
+
+### When to use
+
+- You have continuous numeric variables and want to assess pairwise associations.  
+- You may have **groups** (e.g., treatment vs control) and want group-specific correlations.  
+- You need **confidence intervals** for the correlation coefficients.
+
+---
+
+### Data Preparation
+
+```{r, warning=F}
+# Load required packages
+library(dplyr)
+library(psych)
+library(knitr)
+
+# Example: mtcars dataset
+data <- mtcars
+
+# Define variables
+dependent <- "mpg"
+independent <- c("wt", "hp")
+group_column <- "am" # automatic/manual transmission
+
+# Inspect data
+head(data)
+summary(data[ , c(dependent, independent, group_column)])
+```
+
+```{r}
+
+# Defining the function
+correlation_analysis <- function(
+    input_data = mtcars,                          
+    dependent = "mpg",                            
+    independent = c("wt", "hp"),                  
+    method = "spearman",                          
+    group_column = "am"                           
+) {
+  
+  # Load required packages
+  if(!require(dplyr)) install.packages("dplyr")
+  if(!require(psych)) install.packages("psych")
+  if(!require(rlang)) install.packages("rlang")
+  library(dplyr)
+  library(psych)
+  library(rlang)
+  
+  # Input validation
+  if (!is.data.frame(input_data)) stop("input_data must be a data frame")
+  if (!all(dependent %in% colnames(input_data))) stop("Not all dependent variables exist")
+  if (!all(independent %in% colnames(input_data))) stop("Not all independent variables exist")
+  if (!method %in% c("pearson","spearman","kendall")) stop("Invalid method")
+  if (!group_column %in% colnames(input_data)) stop("Group column does not exist")
+  
+  correlation_results <- data.frame(
+    Variable1 = character(),
+    Variable2 = character(),
+    CorrelationCoefficient = numeric(),
+    RawLower = numeric(),
+    RawUpper = numeric(),
+    P_value = numeric(),
+    AdjLower = numeric(),
+    AdjUpper = numeric(),
+    Group = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  # Check numeric
+  for (var in c(dependent, independent)) {
+    if (!is.numeric(input_data[[var]])) stop(paste("Variable", var, "is not numeric"))
+  }
+  
+  # Loop over groups
+  for (group_loop in unique(input_data[[group_column]])) {
+    collection <- input_data %>% filter(!!sym(group_column) == group_loop)
+    if (nrow(collection) < 3) {
+      warning(paste("Group", group_loop, "has fewer than 3 observations. Skipping."))
+      next
+    }
+    
+    correlation_score <- psych::corr.test(collection[independent], collection[dependent], method = method)
+    
+    for (i in seq_along(independent)) {
+      for (j in seq_along(dependent)) {
+        correlation_results <- rbind(correlation_results, data.frame(
+          Variable1 = independent[i],
+          Variable2 = dependent[j],
+          CorrelationCoefficient = correlation_score$r[i,j],
+          RawLower = correlation_score$ci$lower[i+(i*(j-1))],
+          RawUpper = correlation_score$ci$upper[i+(i*(j-1))],
+          P_value = correlation_score$p[i,j],
+          AdjLower = correlation_score$ci.adj$lower[i+(i*(j-1))],
+          AdjUpper = correlation_score$ci.adj$upper[i+(i*(j-1))],
+          Group = as.character(group_loop),
+          stringsAsFactors = FALSE
+        ))
+      }
+    }
+  }
+  
+  correlation_results$Significance <- NA
+  correlation_results$Significance[correlation_results$P_value >= 0.05] <- "ns"
+  correlation_results$Significance[correlation_results$P_value < 0.05] <- "*"
+  correlation_results$Significance[correlation_results$P_value < 0.01] <- "**"
+  correlation_results$Significance[correlation_results$P_value < 0.001] <- "***"
+  
+  return(correlation_results)
+}
+```
+
+
+
+Assumption Checks
+
+### 1. Check numeric variables
+
+```{r}
+
+sapply(c(dependent, independent), function(x) is.numeric(data[[x]]))
+```
+
+All variables must be numeric for correlation.
+
+### 2. Check group sizes (if using grouping)
+
+```{r}
+table(data[[group_column]])
+```
+
+
+Each group should have at least 3 observations. Groups smaller than this will be skipped.
+
+### 3. Explore relationships visually
+
+```{r}
+library(ggplot2)
+```
+
+
+```{r}
+
+# Scatter plots of dependent vs each independent
+for (var in independent) {
+  ggplot(data, aes_string(x = var, y = dependent, color = group_column)) +
+    geom_point(size = 2) +
+    geom_smooth(method = "lm", se = FALSE) +
+    theme_minimal() +
+    ggtitle(paste("Scatter plot:", dependent, "vs", var))
+}
+
+```
+
+Visual inspection helps detect non-linear relationships, outliers, or unusual patterns.
+
+### Run Correlation Analysis
+
+```{r}
+
+# Run the correlation_analysis function
+corr_results <- correlation_analysis(
+  input_data = data,
+  dependent = dependent,
+  independent = independent,
+  method = "spearman",
+  group_column = group_column
+)
+
+```
+### Showing results
+```{r}
+knitr::kable(head(corr_results), digits = 3, caption = "Correlation Analysis Results")
+
+```
+
+
