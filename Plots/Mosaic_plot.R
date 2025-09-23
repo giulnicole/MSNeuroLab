@@ -1,5 +1,5 @@
 ############################################################
-# Script Name: Mosaic_plot.R
+# Script Plot: Mosaic plot
 # Author: Giulia Nicole Baldrighi
 # Purpose: Create a publication-ready mosaic plot showing
 #          the proportion of categories across groups.

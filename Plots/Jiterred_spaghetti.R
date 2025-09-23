@@ -1,5 +1,5 @@
 ############################################################
-# Script Name: Jittered_spaghetti.R
+# Script Plot: Spaghetti plot
 # Author: Giulia Nicole Baldrighi
 # Purpose: Visualize longitudinal data with jittered spaghetti plot
 # Input:
@@ -11,7 +11,7 @@ library(dplyr)
 library(ggplot2)
 
 # ---------------------- Example data ----------------------
-# set.seed(42)
+# set.seed(42) 
  df <- data.frame(
    ID = rep(1:20, each = 2),
    Group = rep(c("Treated", "Untreated"), each = 20),
