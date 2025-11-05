@@ -1,5 +1,5 @@
 ############################################################
-# Script Name: DW_Plot_OR.R
+# Script Plot:Dot-and-whisker plot 
 # Author: Giulia Nicole Baldrighi 
 # Purpose: Create dot-and-whisker plots of regression results
 # Input: 
