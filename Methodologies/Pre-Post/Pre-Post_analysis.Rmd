@@ -1,0 +1,133 @@
+---
+title: "Pre-post analysis"
+author: "Giulia Baldrighi"
+date: "2025-10-12"
+output: html_document
+---
+  
+## Delta-change
+
+**Delta change** represents the **difference between post-treatment and baseline measurements**:
+
+\[
+\Delta = \text{Post} - \text{Pre}
+\]
+
+- Allows to see **how much a variable changes** after intervention.  
+- Often used when comparing **treatment effects**.  
+
+```{r}
+# Example dataset
+set.seed(123)
+df <- data.frame(
+  group = rep(c("Control", "Treatment"), each = 30),
+  pre = c(rnorm(30, 50, 5), rnorm(30, 52, 5)),
+  post = c(rnorm(30, 51, 5), rnorm(30, 57, 5))
+)
+
+# Compute delta
+df$delta <- df$post - df$pre
+head(df)
+
+
+# Check normality of delta
+shapiro.test(df$delta)  # Shapiro-Wilk test
+
+# if normal: t-test
+t.test(delta ~ group, data = df)
+
+# if not: wilcox-test
+wilcox.test(delta ~ group, data = df)
+```
+
+
+---
+
+## Pre-Post paired analysis
+
+* If the **same subjects** are measured before and after, use **paired tests**.
+
+```{r}
+# Paired t-test for Treatment group
+t.test(df$post[df$group=="Treatment"], 
+       df$pre[df$group=="Treatment"], 
+       paired = TRUE)
+```
+
+* **Interpretation:** tests whether the **mean change from baseline** is statistically significant.
+
+* **Alternative (non-parametric):** Mann-Withney signed-rank test if normality assumption is violated:
+
+```{r}
+wilcox.test(df$post[df$group=="Treatment"], 
+            df$pre[df$group=="Treatment"], 
+            paired = TRUE)
+```
+
+---
+
+## Comparing delta across groups
+
+* You can compare **delta values between groups** using t-test or ANOVA:
+
+```{r}
+# t-test for delta between Control and Treatment
+t.test(delta ~ group, data = df)
+
+# Or ANOVA for multiple groups
+# (here just two groups)
+anova_model <- aov(delta ~ group, data = df)
+summary(anova_model)
+```
+
+* **Interpretation:** Tests whether **mean change differs** between groups.
+
+---
+
+## ANCOVA (Analysis of Covariance)
+
+* ANCOVA adjusts **post-treatment outcomes** for baseline differences:
+
+[
+\text{Post} = \beta_0 + \beta_1 \text{Group} + \beta_2 \text{Pre} + \epsilon
+]
+
+```{r}
+# ANCOVA adjusting post for pre
+ancova_model <- lm(post ~ group + pre, data = df)
+summary(ancova_model)
+```
+
+**Interpretation:**
+
+- `group` effect tells if **treatment affects post**, **adjusted for baseline**.
+
+- More powerful than delta alone if baseline differs across groups.
+
+* Diagnostic checks:
+
+```{r}
+par(mfrow=c(2,2))
+plot(ancova_model)
+```
+
+---
+
+## Take home message
+
+- **Delta analysis**: simple, intuitive, may ignore baseline differences.
+
+- **Pre-post paired test**: good for within-subject changes.
+
+- **ANCOVA**: adjusts for baseline, increases statistical power, handles covariates.
+
+
+
+
+
+
+
+
+
+
+
