@@ -1,0 +1,464 @@
+---
+title: "Collection of plots"
+subtitle: ""
+author: "Airas Group"
+institute: "RStudio, PBC"
+date: "2025/5/9 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+# Plots for exploratory analysis
+
+
+
+---
+
+## 1. Boxplots
+
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+library(ggdist)  #for half-eye / raincloud plots
+
+set.seed(123) #for the reproducibility of generated data
+df <- data.frame(
+  group = rep(c("Control", "Treatment"), each = 50),
+  value = c(rnorm(50, mean=5, sd=1),
+            rnorm(50, mean=6, sd=1.2))
+)
+```
+
+
+
+---
+
+### Classic boxplot
+
+- Run the code:
+
+```{r, echo=F}
+library(ggplot2)
+ggplot(df, aes(x = group, y = value, fill = group)) +
+  geom_boxplot(alpha=0.9) +
+  theme_light() +
+  scale_fill_manual(values = c("Control" = "#1b9e77",
+                               "Treatment" = "#d95f02"))+
+  labs(title = "Boxplot by group", y = "Value", x = "Group")
+```
+
+
+---
+
+### Boxplot with statistics
+
+- Run the code:
+
+```{r, echo=F}
+library(ggplot2)
+library(ggpubr)
+# Compute p-value manually
+p <- t.test(value ~ group, data = df)$p.value
+p_label <- ifelse(p < 0.001, "<0.001", sprintf("%.3f", p))
+
+ggplot(df, aes(x = group, y = value, fill = group)) +
+  geom_boxplot() +
+  annotate("text", x = 1.5, y = max(df$value) + 0.5, label = paste0("p: ", p_label), size = 5) +
+  theme_light() +
+   scale_fill_manual(values = c("Control" = "#1b9e77",
+                               "Treatment" = "#d95f02"))+
+  labs(title = "Boxplot with formatted p-value", y = "Value", x = "Group")
+
+```
+
+---
+
+### Group-wise comaprison
+
+- Run the code:
+
+```{r, echo=F}
+
+library(ggplot2)
+
+set.seed(123)
+df2 <- data.frame(
+  group = rep(c("Control", "Treatment1", "Treatment2", "Treatment3"), each = 30),
+  value = c(rnorm(30, 5, 1),
+            rnorm(30, 6, 1.2),
+            rnorm(30, 5.5, 1),
+            rnorm(30, 6.5, 1.1))
+)
+
+
+# Boxplot with different colors
+ggplot(df2, aes(x = group, y = value, fill = group)) +
+  geom_boxplot() +
+  stat_compare_means(method = "anova", label = "p.signif") +  # ANOVA for >2 groups
+  scale_fill_manual(values = c("Control" = "#1b9e77",
+                               "Treatment1" = "#d95f02",
+                               "Treatment2" = "#7570b3",
+                               "Treatment3" = "#e7298a")) +
+  theme_light() +
+  labs(title = "Boxplot for multiple comparison", y = "Value", x = "Group")
+
+```
+
+---
+
+### Multiple comparisons
+
+- Run the code:
+
+```{r, echo=FALSE}
+library(ggplot2)
+library(ggpubr)
+
+# Define all pairwise comparisons
+my_comparisons <- list(
+  c("Control", "Treatment1"),
+  c("Control", "Treatment2"),
+  c("Control", "Treatment3"),
+  c("Treatment1", "Treatment2"),
+  c("Treatment1", "Treatment3"),
+  c("Treatment2", "Treatment3")
+)
+
+# Boxplot with all pairwise comparisons and p-values
+ggplot(df2, aes(x = group, y = value, fill = group)) +
+  geom_boxplot() +
+  stat_compare_means(
+    comparisons = my_comparisons, 
+    method = "t.test", 
+    label = "p.format",     # show exact p-values
+    hide.ns = TRUE           # hide non-significant p-values if desired
+  ) +
+  scale_fill_manual(values = c("Control" = "#1b9e77",
+                               "Treatment1" = "#d95f02",
+                               "Treatment2" = "#7570b3",
+                               "Treatment3" = "#e7298a")) +
+  theme_light() +
+  labs(title = "Boxplot with pairwise p-values", y = "Value", x = "Group")
+```
+
+
+
+
+---
+
+
+
+## 2. Raincloud plots
+
+We want to show boxplot, disperison of values and density of a sampled numeric variables, highlighitng the difference of distribution between two groups
+
+
+---
+
+- Run the code:
+
+```{r, echo=F}
+# Fancy raincloud plot
+library(ggplot2)
+library(ggdist) 
+
+ggplot(df, aes(x=group, y=value, fill=group)) +
+  ggdist::stat_halfeye(
+    adjust = 0.5, width = 0.6, .width = 0, justification = -0.3
+  ) +
+  geom_boxplot(width=0.2, outlier.shape = NA, alpha=0.5) +
+  geom_jitter(width=0.1, alpha=0.6) +
+  scale_fill_brewer(palette="Set2") +
+  labs(title="Raincloud plot",
+       y="Measurement",
+       x="Group") +
+  theme_minimal(base_size = 14)
+```
+
+
+---
+
+
+
+#  Plots for model estimates
+
+
+
+---
+
+
+## 1. Dot-and-whisker plot
+
+Dot-and-whisker plots visually summarize regression results by showing the point estimate (dot) and confidence interval (whiskers) for each predictor. They are useful for quickly  comparing effect sizes and significance across multiple variables in a single, clean plot.
+
+- We start from running logistic regression model 
+
+- We obtain estimate (with p-values, confidence intervals) for each of the regressor in the model
+
+```{r, echo=FALSE, message=F, warning=F}
+# ---- Load libraries ----
+library(dplyr)
+library(ggplot2)
+library(dotwhisker)
+library(forcats)
+
+# ---------------------- Example data ----------------------
+ results_clean <- data.frame(
+   Predictor = rep(c("Age", "Gender", "BMI", "HOT_PET"), each = 2),
+   OR = c(1.25, 1.30, 0.85, 0.88, 1.10, 1.20, 1.40, 1.35),
+   CI_low = c(1.10, 1.15, 0.65, 0.70, 0.90, 1.05, 1.10, 1.15),
+  CI_high = c(1.40, 1.50, 1.05, 1.10, 1.30, 1.35, 1.70, 1.55),
+  p_value = c(0.01, 0.02, 0.04, 0.03, 0.12, 0.10, 0.001, 0.002),
+   model = rep(c("Unadjusted", "Adjusted"), 4)
+ )
+results_clean
+```
+
+
+---
+
+
+- Now we need to arrange the data before plotting
+
+- From the model output (logistic regression) we need to run this:
+```{r}
+dw_data <- results_clean %>%
+  
+  rename(
+    estimate = OR,
+    conf.low = CI_low,
+    conf.high = CI_high,
+    term = Predictor
+  ) %>%
+  mutate(
+    model = factor(model, levels = c("Unadjusted", "Adjusted")),
+    term = fct_rev(factor(term)),
+    label = sprintf("%.2f", estimate),
+    sig = ifelse(p_value < 0.05, "Significant", "Not significant")
+  )
+```
+
+---
+
+- And on the dw_data arranged for the plot, we run the dwplot function:
+```{r, echo=F, warning=F}
+dwplot(dw_data, 
+       dot_args = list(size = 3), 
+       whisker_args = list(size = 1),
+       dodge_size = 0.6) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray40", size = 0.8) +
+  scale_x_log10() +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Odds Ratios with 95% Confidence Intervals",
+    subtitle = "Comparison of Unadjusted vs Adjusted Models",
+    x = "Odds Ratio (log scale)",
+    y = "",
+    color = "Model"
+  ) +
+  scale_color_manual(values = c("Unadjusted" = "#1f77b4", "Adjusted" = "#ff7f0e")) +
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(size = 12, color = "gray30"),
+    axis.text.y = element_text(size = 12),
+    axis.text.x = element_text(size = 11)
+  ) +
+  # Add OR labels near the dots
+  geom_text(
+    data = dw_data,
+    aes(x = estimate, y = term, label = label, color = model),
+    hjust = -0.5,
+    size = 3.5,
+    show.legend = FALSE
+  ) +
+  coord_cartesian(xlim = c(0.5, max(dw_data$conf.high) * 1.5)) +
+  guides(color = guide_legend(override.aes = list(size = 4)))
+
+```
+
+---
+
+
+# Plots for accuracy/ frequency tables
+
+
+
+---
+
+
+## 1. Mosaic plot 
+
+Mosaic plots are used to visualize contingency tables. The size of each tile represents the proportion of observations in each group-category combination, allowing for quick comparisonof relative frequencies.
+
+- We estart from a contingency table as the following one: 
+```{r}
+mat <- matrix(c(73, 27, 23, 77),
+              nrow = 2,
+              byrow = TRUE,
+              dimnames = list(
+                Group = c("PF%< 2.12", "PF% >= 2.12"),
+                Category = c("Low", "High")
+              ))
+mat
+```
+
+---
+
+- Next we run the mosaicplot function:
+
+```{r, warning=F, echo=F}
+mp <- mosaicplot(
+  mat,
+  color = c("#FF9800", "#03A9F4"),  # Orange & Blue
+  main = "Distribution o by ventricular PF%",
+  xlab = "Ventricular PF% group",
+  ylab = "Phenotype",
+  cex.axis = 1.2,
+  cex.lab = 1.3,
+  cex.main = 1.5,
+  las = 1,       # horizontal labels on y-axis
+  border = "white"
+)
+
+# Convert counts to percentages
+total <- sum(mat)
+percentages <- round((mat / total) * 100, 1)
+
+# Get coordinates for annotations
+# These values depend on the number of rows and columns.
+x_coords <- rep(c(0.30, 0.75), times = nrow(mat))
+y_coords <- c(0.70, 0.85, 0.15, 0.30)
+
+# Flatten the matrix into a vector to match coordinates
+percentage_labels <- paste0(as.vector(percentages), "%")
+
+# Overlay text
+text(
+  x = x_coords,
+  y = y_coords,
+  labels = percentage_labels,
+  cex = 1.2,
+  font = 2,
+  col = "black"
+)
+
+```
+
+---
+
+# Plots for longitudinal data
+
+
+
+--- 
+
+
+## 1. Spaghetti plot 
+
+A spaghetti plot is a type of line plot used to visualize longitudinal or repeated-measures data for multiple subjects. The key idea is to plot each subject’s trajectory over time, so you can see both individual trends and the overall pattern.
+
+- We start from a dataset for example with the following variables:  
+```{r}
+set.seed(42) # the seed allows to generate the same values for rBRLs
+ df <- data.frame(
+   ID = rep(1:20, each = 2),
+   Group = rep(c("Treated", "Untreated"), each = 20),
+   Time = rep(c("baseline", "follow-up"), times = 20),
+   rBRL = c(rnorm(20, 1, 0.2), rnorm(20, 1.5, 0.2))
+ )
+
+```
+
+---
+
+- Since some values will coincide, we would like to randomly jitter them (spiking in the 2d-space)
+
+- We will prepare the data before plotting:
+
+```{r}
+set.seed(42) # the seed allows to generate the same plot
+df_jittered <- df %>%
+  mutate(
+    Time_num = as.numeric(factor(Time, levels = c("baseline", "follow-up"))),
+    Time_jittered = Time_num + runif(n(), -0.08, 0.08) # jitter for clarity
+  )
+```
+
+
+---
+
+- Before plotting calculate the means:
+```{r}
+# Group means (without jitter)
+group_means <- df %>%
+  group_by(Group, Time) %>%
+  summarise(mean_rBRL = mean(rBRL), .groups = "drop") %>%
+  mutate(Time_num = as.numeric(factor(Time, levels = c("baseline", "follow-up"))))
+
+
+```
+
+
+---
+
+- Run entirely the code 
+
+```{r, echo=F}
+ggplot() +
+  # Individual subject lines and points
+  geom_line(
+    data = df_jittered,
+    aes(x = Time_jittered, y = rBRL, group = ID, color = Group),
+    alpha = 0.3, size = 0.8
+  ) +
+  geom_point(
+    data = df_jittered,
+    aes(x = Time_jittered, y = rBRL, color = Group),
+    size = 2, alpha = 0.7
+  ) +
+  
+  # Group-level mean lines and points (no ID mapping)
+  geom_line(
+    data = group_means,
+    aes(x = Time_num, y = mean_rBRL, group = Group),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = group_means,
+    aes(x = Time_num, y = mean_rBRL),
+    shape = 21, fill = "white", color = "black", size = 3, stroke = 1
+  ) +
+  
+  # Axis and colors
+  scale_x_continuous(
+    breaks = c(1, 2),
+    labels = c("Baseline", "Follow-up")
+  ) +
+  scale_color_manual(values = c("Treated" = "#1f77b4", "Untreated" = "#ff7f0e")) +
+  
+  # Titles and theme
+  labs(
+    title = "Longitudinal change in rBRL by group",
+    x = "Time",
+    y = "rBRL Value",
+    color = "Group"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12),
+    legend.position = "top"
+  )
+
+```
+
+
+
+---
