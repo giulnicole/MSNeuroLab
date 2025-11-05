@@ -1,31 +1,19 @@
 # MSNeuroLab
-Repository of statistical analysis
+Repository of statistical analyses
 
 ### Description
-MSNeuroLab provides a comprehensive set of tools for statistical analysis of neuroscience data, with a particular focus on clinical and imaging-derived datasets such as MRI, PET, and derived biomarkers. The package streamlines common analytical workflows, from preprocessing and exploratory data analysis to advanced modeling and predictive analytics. It is designed for researchers who want to efficiently perform robust statistical analyses while maintaining reproducibility and visualization-ready outputs.
+MSNeuroLab provides a comprehensive set of tools for statistical analysis of neuroscience data, with a particular focus on clinical and imaging-derived datasets such as MRI, PET, and derived biomarkers. 
 
-### Sections
+### Methodologies 
+- Pre-Post (delta change analysis, test pre-post, analysis of covariance)
+- Correlation (workflow for correlation matriz and heatmap)
+- Models (linear model, logistic model)
 
-- Exploratory Data Analysis (EDA)
-
-- Group comparisons and visualization of distributions.
-
-- Pre-Post / Delta Analysis
-
-- Analysis of covariance 
-
-- Partial Least Squares Discriminant Analysis
+### R 
+Built-in functions for some statistical checks, exploratory analysis and predictive modeling
 
 
 ### Plots
 Boxplots, violin plots, density plots, and histograms for continuous and categorical variables.
 
 
-
-Regression Models
-
-Linear models for continuous outcomes with covariates (age, sex, disease type).
-
-Logistic regression for binary outcomes (e.g., progression, presence/absence of lesion).
-
-Diagnostic checks for normality, homoscedasticity, and influential points.
